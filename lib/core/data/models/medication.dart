@@ -28,6 +28,8 @@ class Medication {
   @HiveField(7)
   bool? reconstitution;
 
+
+
   Medication({
     this.id,
     required this.name,
@@ -40,9 +42,14 @@ class Medication {
   });
 }
 
+@HiveType(typeId: 6)
 enum MedicationType {
+  @HiveField(0)
   tablet,
+  @HiveField(1)
   injection,
+  @HiveField(2)
   drops,
+  @HiveField(3)
   other,
 }

@@ -75,8 +75,12 @@ class TitrationStep {
   });
 }
 
+@HiveType(typeId: 7)
 enum Frequency {
+  @HiveField(0)
   daily,
+  @HiveField(1)
   weekly,
+  @HiveField(2)
   custom,
 }

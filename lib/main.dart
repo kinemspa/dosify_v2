@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'core/data/models/medication.dart';
-import 'core/data/models/dose_schedule.dart';
+
 import 'core/data/models/dose_log.dart';
-import 'core/data/models/supply.dart';
+import 'core/data/models/dose_schedule.dart';
+import 'core/data/models/medication.dart';
 import 'core/data/models/reconstitution.dart';
+import 'core/data/models/supply.dart';
+import 'core/data/repositories/medication_repository.dart';
+import 'core/data/models/time_of_day_adapter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +20,9 @@ void main() async {
   Hive.registerAdapter(DoseLogAdapter());
   Hive.registerAdapter(SupplyAdapter());
   Hive.registerAdapter(ReconstitutionAdapter());
+  Hive.registerAdapter(MedicationTypeAdapter());
+  Hive.registerAdapter(FrequencyAdapter());
+  Hive.registerAdapter(TimeOfDayAdapter());
 
   final repo = MedicationRepository();
   await repo.init();

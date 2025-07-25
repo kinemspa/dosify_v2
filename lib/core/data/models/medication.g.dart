@@ -60,3 +60,52 @@ class MedicationAdapter extends TypeAdapter<Medication> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
+
+class MedicationTypeAdapter extends TypeAdapter<MedicationType> {
+  @override
+  final int typeId = 6;
+
+  @override
+  MedicationType read(BinaryReader reader) {
+    switch (reader.readByte()) {
+      case 0:
+        return MedicationType.tablet;
+      case 1:
+        return MedicationType.injection;
+      case 2:
+        return MedicationType.drops;
+      case 3:
+        return MedicationType.other;
+      default:
+        return MedicationType.tablet;
+    }
+  }
+
+  @override
+  void write(BinaryWriter writer, MedicationType obj) {
+    switch (obj) {
+      case MedicationType.tablet:
+        writer.writeByte(0);
+        break;
+      case MedicationType.injection:
+        writer.writeByte(1);
+        break;
+      case MedicationType.drops:
+        writer.writeByte(2);
+        break;
+      case MedicationType.other:
+        writer.writeByte(3);
+        break;
+    }
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MedicationTypeAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
