@@ -36,6 +36,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  Future<void> _register() async {
+    try {
+      await _auth.createUserWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registered and logged in!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registration error: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _biometricAuth() async {
     bool authenticated = await _localAuth.authenticate(localizedReason: 'Unlock app');
     if (authenticated && mounted) {
@@ -81,6 +101,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               obscureText: true,
             ),
             ElevatedButton(onPressed: _login, child: const Text('Login')),
+            ElevatedButton(onPressed: _register, child: const Text('Register')),
             ElevatedButton(onPressed: _biometricAuth, child: const Text('Biometric Unlock')),
             ElevatedButton(onPressed: _googleLogin, child: const Text('Google Login')),
           ],
