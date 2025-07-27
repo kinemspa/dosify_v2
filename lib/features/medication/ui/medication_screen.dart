@@ -8,7 +8,7 @@ import 'package:dosify_v2/core/data/models/reconstitution.dart';
 import 'package:dosify_v2/core/utils/reconstitution_utils.dart';
 import 'package:dosify_v2/core/data/repositories/medication_repository.dart';
 import 'package:dosify_v2/core/data/repositories/reconstitution_repository.dart';
-import 'package:logger/logger.dart'; // Add for debugging
+import 'package:logger/logger.dart';
 
 class MedicationScreen extends ConsumerStatefulWidget {
   final Medication? med;
@@ -31,13 +31,13 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   final _powderAmountController = TextEditingController();
   final _solventVolumeController = TextEditingController();
   final _desiredConcentrationController = TextEditingController();
-  final _logger = Logger(); // Debug logger
+  final _logger = Logger();
 
   @override
   void initState() {
     super.initState();
     _logger.d('Initializing MedicationScreen, med: ${widget.med}');
-    if (widget.med != null) {
+    if (widget.med != null && widget.med!.id != null) {
       _nameController.text = widget.med!.name;
       _type = widget.med!.type;
       _strengthController.text = widget.med!.strength.toString();
