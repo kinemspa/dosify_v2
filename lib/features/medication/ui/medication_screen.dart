@@ -5,6 +5,8 @@ import 'package:dosify_v2/core/providers/reconstitution_provider.dart';
 import 'package:dosify_v2/core/data/models/medication.dart';
 import 'package:dosify_v2/core/data/models/reconstitution.dart';
 import 'package:dosify_v2/core/utils/reconstitution_utils.dart';
+import 'package:dosify_v2/core/data/repositories/medication_repository.dart';
+import 'package:dosify_v2/core/data/repositories/reconstitution_repository.dart';
 
 class MedicationScreen extends ConsumerStatefulWidget {
   final Medication? med;  // Optional for edit
@@ -39,8 +41,8 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
       _stockController.text = widget.med!.stock.toString();
       _thresholdController.text = widget.med!.lowStockThreshold.toString();
       _reconstitution = widget.med!.reconstitution ?? false;
-      // Load reconstitution if exists (from repo)
-      final recon = ref.read(reconstitutionRepositoryProvider).getByMedId(widget.med!.id!);
+      final reconRepo = ref.read(reconstitutionRepositoryProvider);
+      final recon = reconRepo.getByMedId(widget.med!.id!);
       if (recon != null) {
         _powderAmountController.text = recon.powderAmount.toString();
         _solventVolumeController.text = recon.solventVolume.toString();
@@ -52,7 +54,6 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   Future<void> _saveMedication() async {
     if (_formKey.currentState!.validate()) {
       final med = Medication(
-        id: widget.med?.id,
         name: _nameController.text,
         type: _type,
         strength: double.parse(_strengthController.text),
@@ -79,10 +80,18 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           ref.read(addReconstitutionProvider(recon));
         }
       } else {
-        await widget.med!.save();  // Hive update
+        med.id = widget.med!.id;
+        final medRepo = ref.read(medicationRepositoryProvider);
+        await medRepo.updateMedication(widget.med!.id!, med);
+        final reconRepo = ref.read(reconstitutionRepositoryProvider);
         if (_reconstitution) {
-          final recon = ref.read(reconstitutionRepositoryProvider).getByMedId(widget.med!.id!) ?? Reconstitution(powderAmount: 0, solventVolume: 0);
-          recon.powderAmount = double.parse(_powderAmountController.text);
+          Reconstitution? recon = reconRepo.getByMedId(widget.med!.id!);
+          if (recon == null) {
+            recon = Reconstitution(powderAmount: 0, solventVolume: 0, medId: widget.med!.id);
+            final reconKey = await reconRepo.addReconstitution(recon);
+            recon = reconRepo._box.get(reconKey);
+          }
+          recon!.powderAmount = double.parse(_powderAmountController.text);
           recon.solventVolume = double.parse(_solventVolumeController.text);
           recon.desiredConcentration = double.parse(_desiredConcentrationController.text);
           recon.calculatedVolumePerDose = calculateVolumePerDose(
@@ -90,15 +99,10 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
             recon.solventVolume,
             recon.desiredConcentration!,
           );
-          recon.medId = widget.med!.id;
-          if (recon.key == null) {
-            await ref.read(addReconstitutionProvider(recon).future);
-          } else {
-            await recon.save();
-          }
+          await reconRepo.updateReconstitution(recon.key as int, recon);
         } else if (widget.med!.reconstitution == true) {
-          final recon = ref.read(reconstitutionRepositoryProvider).getByMedId(widget.med!.id!);
-          if (recon != null) recon.delete();
+          final recon = reconRepo.getByMedId(widget.med!.id!);
+          if (recon != null) await reconRepo.deleteReconstitution(recon.key as int);
         }
         ref.refresh(medicationsProvider);
       }

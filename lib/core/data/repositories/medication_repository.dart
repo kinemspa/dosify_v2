@@ -12,6 +12,10 @@ class MedicationRepository {
     return await _box.add(med);
   }
 
+  Future<void> updateMedication(int key, Medication med) async {
+    await _box.put(key, med);
+  }
+
   List<Medication> getMedications() {
     return _box.values.toList();
   }

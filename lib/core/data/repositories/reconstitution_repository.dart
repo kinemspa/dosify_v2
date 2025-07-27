@@ -1,4 +1,3 @@
-// Fix for reconstitution_repository.dart: Change getByMedId to return Reconstitution? and handle null in orElse
 import 'package:hive/hive.dart';
 import '../models/reconstitution.dart';
 
@@ -13,11 +12,19 @@ class ReconstitutionRepository {
     return await _box.add(recon);
   }
 
+  Future<void> updateReconstitution(int key, Reconstitution recon) async {
+    await _box.put(key, recon);
+  }
+
+  Future<void> deleteReconstitution(int key) async {
+    await _box.delete(key);
+  }
+
   List<Reconstitution> getReconstitutions() {
     return _box.values.toList();
   }
 
   Reconstitution? getByMedId(int medId) {
-    return _box.values.firstWhere((recon) => recon.medId == medId, orElse: () => null!);
+    return _box.values.firstWhere((recon) => recon.medId == medId, orElse: () => null);
   }
 }
