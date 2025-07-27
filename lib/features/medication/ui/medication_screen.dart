@@ -47,16 +47,27 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
       _thresholdController.text = widget.med!.lowStockThreshold.toString();
       _reconstitution = widget.med!.reconstitution ?? false;
       if (widget.med!.id != null) {
-        final reconRepo = ref.read(reconstitutionRepositoryProvider);
-        final recon = reconRepo.getByMedId(widget.med!.id!);
-        if (recon != null) {
-          _powderAmountController.text = recon.powderAmount.toString();
-          _solventVolumeController.text = recon.solventVolume.toString();
-          _desiredConcentrationController.text = recon.desiredConcentration?.toString() ?? '';
-        }
+        // Defer reconstitution fetch to async method
+        _fetchReconstitution();
       } else {
         _logger.w('Medication id is null for edit');
       }
+    }
+  }
+
+  Future<void> _fetchReconstitution() async {
+    try {
+      final reconRepo = await ref.read(reconstitutionRepositoryProvider.future);
+      final recon = reconRepo.getByMedId(widget.med!.id!);
+      if (recon != null && mounted) {
+        setState(() {
+          _powderAmountController.text = recon.powderAmount.toString();
+          _solventVolumeController.text = recon.solventVolume.toString();
+          _desiredConcentrationController.text = recon.desiredConcentration?.toString() ?? '';
+        });
+      }
+    } catch (e) {
+      _logger.e('Failed to fetch reconstitution: $e');
     }
   }
 
@@ -79,6 +90,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           final key = await ref.read(addMedicationProvider(med).future);
           _logger.d('Medication added with key: $key');
           if (_reconstitution) {
+            final reconRepo = await ref.read(reconstitutionRepositoryProvider.future);
             final recon = Reconstitution(
               powderAmount: double.parse(_powderAmountController.text),
               solventVolume: double.parse(_solventVolumeController.text),
@@ -90,7 +102,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
               ),
               medId: key,
             );
-            await ref.read(addReconstitutionProvider(recon).future);
+            await reconRepo.addReconstitution(recon);
             _logger.d('Reconstitution added for medId: $key');
           }
         } else if (widget.med!.id != null) {
@@ -98,7 +110,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           med.id = widget.med!.id;
           final medRepo = ref.read(medicationRepositoryProvider);
           await medRepo.updateMedication(widget.med!.id!, med);
-          final reconRepo = ref.read(reconstitutionRepositoryProvider);
+          final reconRepo = await ref.read(reconstitutionRepositoryProvider.future);
           if (_reconstitution) {
             Reconstitution? recon = reconRepo.getByMedId(widget.med!.id!);
             if (recon == null) {

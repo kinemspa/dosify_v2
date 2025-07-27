@@ -34,10 +34,40 @@ class MedicationListScreen extends ConsumerWidget {
           itemBuilder: (context, index) {
             final med = meds[index];
             if (med.id == null) {
-              logger.w('Medication at index $index has null id: ${med.name}');
-              return const ListTile(
-                title: Text('Invalid medication'),
-                subtitle: Text('Error: Missing ID'),
+              logger.w('Medication at index $index has null id:vector art of a pill bottle ${med.name}');
+              return ListTile(
+                title: Text('${med.name} (Invalid)'),
+                subtitle: const Text('Error: Missing ID - Please re-add'),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Medication'),
+                        content: Text('Are you sure you want to delete ${med.name}?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true && med.id != null) {
+                      await ref.read(deleteMedicationProvider(med.id!).future);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${med.name} deleted')),
+                        );
+                      }
+                    }
+                  },
+                ),
               );
             }
             return ListTile(
@@ -46,6 +76,36 @@ class MedicationListScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => MedicationScreen(med: med)),
+              ),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete Medication'),
+                      content: Text('Are you sure you want to delete ${med.name}?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await ref.read(deleteMedicationProvider(med.id!).future);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${med.name} deleted')),
+                      );
+                    }
+                  }
+                },
               ),
             );
           },

@@ -4,6 +4,7 @@ import 'package:dosify_v2/features/medication/ui/medication_list_screen.dart';
 import 'package:dosify_v2/features/scheduling/ui/dose_screen.dart';
 import 'package:dosify_v2/features/logs/ui/log_screen.dart';
 import 'package:dosify_v2/features/scheduling/ui/calendar_screen.dart';
+import 'package:logger/logger.dart';
 
 class NavScreen extends StatefulWidget {
   const NavScreen({super.key});
@@ -14,6 +15,7 @@ class NavScreen extends StatefulWidget {
 
 class _NavScreenState extends State<NavScreen> {
   int _selectedIndex = 0;
+  final _logger = Logger();
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
@@ -24,6 +26,7 @@ class _NavScreenState extends State<NavScreen> {
   ];
 
   void _onItemTapped(int index) {
+    _logger.d('Nav bar tapped: index $index');
     setState(() {
       _selectedIndex = index;
     });
@@ -31,10 +34,9 @@ class _NavScreenState extends State<NavScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _logger.d('Building NavScreen with selectedIndex: $_selectedIndex');
     return Scaffold(
-      body: Center(
-        child: _widgetOptions.elementAt(_selectedIndex),
-      ),
+      body: _widgetOptions.elementAt(_selectedIndex), // Simplified to ensure rebuild
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
@@ -61,8 +63,9 @@ class _NavScreenState extends State<NavScreen> {
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.white,
         unselectedItemColor: Colors.white70,
-        backgroundColor: Colors.blue, // Ensure visibility
-        type: BottomNavigationBarType.fixed, // Prevent shifting
+        backgroundColor: Colors.blue,
+        type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped,
       ),
     );
   }

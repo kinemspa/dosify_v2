@@ -19,3 +19,9 @@ final addMedicationProvider = FutureProvider.autoDispose.family<int, Medication>
   ref.invalidate(medicationsProvider);
   return key;
 });
+
+final deleteMedicationProvider = FutureProvider.autoDispose.family<void, int>((ref, key) async {
+  final repo = ref.watch(medicationRepositoryProvider);
+  await repo.deleteMedication(key);
+  ref.invalidate(medicationsProvider);
+});
