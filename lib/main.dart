@@ -14,6 +14,7 @@ import 'core/data/models/supply.dart';
 import 'core/data/models/time_of_day_adapter.dart';
 import 'core/utils/notification_utils.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:logger/logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,26 +40,31 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final logger = Logger();
+    logger.d('Building MyApp');
     return ProviderScope(
       child: MaterialApp(
         title: 'Dosify.v2',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Colors.blue, // Dark background for contrast
-            selectedItemColor: Colors.white, // White for selected items
-            unselectedItemColor: Colors.white70, // Light gray for unselected
+            backgroundColor: Colors.blue,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white70,
           ),
         ),
         home: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
+            logger.d('Auth state: ${snapshot.connectionState}, hasData: ${snapshot.hasData}');
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasData) {
+              logger.d('Routing to NavScreen');
               return const NavScreen();
             }
+            logger.d('Routing to AuthScreen');
             return const AuthScreen();
           },
         ),

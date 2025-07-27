@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dosify_v2/core/providers/medication_provider.dart';
 import 'package:dosify_v2/core/providers/reconstitution_provider.dart';
@@ -27,6 +28,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   final _stockController = TextEditingController();
   final _thresholdController = TextEditingController();
   MedicationType _type = MedicationType.tablet;
+  String? _selectedUnit; // For tablet dropdown
   bool _reconstitution = false;
   final _powderAmountController = TextEditingController();
   final _solventVolumeController = TextEditingController();
@@ -43,11 +45,11 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
       _type = widget.med!.type;
       _strengthController.text = widget.med!.strength.toString();
       _unitController.text = widget.med!.unit;
+      _selectedUnit = widget.med!.unit == 'mg' || widget.med!.unit == 'mcg' ? widget.med!.unit : null;
       _stockController.text = widget.med!.stock.toString();
       _thresholdController.text = widget.med!.lowStockThreshold.toString();
       _reconstitution = widget.med!.reconstitution ?? false;
       if (widget.med!.id != null) {
-        // Defer reconstitution fetch to async method
         _fetchReconstitution();
       } else {
         _logger.w('Medication id is null for edit');
@@ -79,7 +81,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           name: _nameController.text,
           type: _type,
           strength: double.parse(_strengthController.text),
-          unit: _unitController.text,
+          unit: _type == MedicationType.tablet ? _selectedUnit! : _unitController.text,
           stock: int.parse(_stockController.text),
           lowStockThreshold: int.parse(_thresholdController.text),
           reconstitution: _reconstitution,
@@ -150,8 +152,9 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           }
         }
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved successfully!')));
+          await Future.delayed(const Duration(seconds: 2)); // Delay to show SnackBar
+          if (mounted) Navigator.pop(context);
         }
       } catch (e) {
         _logger.e('Save failed: $e');
@@ -193,55 +196,79 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 value: _type,
                 decoration: const InputDecoration(labelText: 'Type'),
                 items: MedicationType.values.map((type) => DropdownMenuItem(value: type, child: Text(type.toString().split('.').last))).toList(),
-                onChanged: (value) => setState(() => _type = value!),
+                onChanged: (value) => setState(() {
+                  _type = value!;
+                  _reconstitution = value == MedicationType.injection ? _reconstitution : false; // Hide for non-injection
+                }),
               ),
-              TextFormField(
-                controller: _strengthController,
-                decoration: const InputDecoration(labelText: 'Strength'),
-                keyboardType: TextInputType.number,
-                validator: _numberValidator,
-              ),
-              TextFormField(
-                controller: _unitController,
-                decoration: const InputDecoration(labelText: 'Unit'),
-                validator: (value) => value!.isEmpty ? 'Required' : null,
-              ),
+              if (_type == MedicationType.tablet) ...[
+                TextFormField(
+                  controller: _strengthController,
+                  decoration: const InputDecoration(labelText: 'Strength'),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Integer only
+                  validator: _intValidator,
+                ),
+                DropdownButtonFormField<String>(
+                  value: _selectedUnit,
+                  decoration: const InputDecoration(labelText: 'Unit'),
+                  items: ['mg', 'mcg'].map((unit) => DropdownMenuItem(value: unit, child: Text(unit))).toList(),
+                  onChanged: (value) => setState(() => _selectedUnit = value),
+                  validator: (value) => value == null ? 'Required' : null,
+                ),
+              ] else ...[
+                TextFormField(
+                  controller: _strengthController,
+                  decoration: const InputDecoration(labelText: 'Strength'),
+                  keyboardType: TextInputType.number,
+                  validator: _numberValidator,
+                ),
+                TextFormField(
+                  controller: _unitController,
+                  decoration: const InputDecoration(labelText: 'Unit'),
+                  validator: (value) => value!.isEmpty ? 'Required' : null,
+                ),
+              ],
               TextFormField(
                 controller: _stockController,
                 decoration: const InputDecoration(labelText: 'Stock'),
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Integer only
                 validator: _intValidator,
               ),
               TextFormField(
                 controller: _thresholdController,
                 decoration: const InputDecoration(labelText: 'Low Stock Threshold'),
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly], // Integer only
                 validator: _intValidator,
               ),
-              SwitchListTile(
-                title: const Text('Reconstitution'),
-                value: _reconstitution,
-                onChanged: (value) => setState(() => _reconstitution = value),
-              ),
-              if (_reconstitution) ...[
-                TextFormField(
-                  controller: _powderAmountController,
-                  decoration: const InputDecoration(labelText: 'Powder Amount'),
-                  keyboardType: TextInputType.number,
-                  validator: _numberValidator,
+              if (_type == MedicationType.injection) ...[
+                SwitchListTile(
+                  title: const Text('Reconstitution'),
+                  value: _reconstitution,
+                  onChanged: (value) => setState(() => _reconstitution = value),
                 ),
-                TextFormField(
-                  controller: _solventVolumeController,
-                  decoration: const InputDecoration(labelText: 'Solvent Volume'),
-                  keyboardType: TextInputType.number,
-                  validator: _numberValidator,
-                ),
-                TextFormField(
-                  controller: _desiredConcentrationController,
-                  decoration: const InputDecoration(labelText: 'Desired Concentration'),
-                  keyboardType: TextInputType.number,
-                  validator: _numberValidator,
-                ),
+                if (_reconstitution) ...[
+                  TextFormField(
+                    controller: _powderAmountController,
+                    decoration: const InputDecoration(labelText: 'Powder Amount (e.g., mg)'),
+                    keyboardType: TextInputType.number,
+                    validator: _numberValidator,
+                  ),
+                  TextFormField(
+                    controller: _solventVolumeController,
+                    decoration: const InputDecoration(labelText: 'Solvent Volume (mL)'),
+                    keyboardType: TextInputType.number,
+                    validator: _numberValidator,
+                  ),
+                  TextFormField(
+                    controller: _desiredConcentrationController,
+                    decoration: const InputDecoration(labelText: 'Desired Concentration (e.g., mg/mL)'),
+                    keyboardType: TextInputType.number,
+                    validator: _numberValidator,
+                  ),
+                ],
               ],
               ElevatedButton(
                 onPressed: _saveMedication,

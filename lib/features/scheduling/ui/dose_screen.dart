@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dosify_v2/core/providers/dose_provider.dart';
 import 'package:dosify_v2/core/data/models/dose_schedule.dart';
-import 'package:dosify_v2/core/utils/notification_utils.dart'; // New import
+import 'package:dosify_v2/core/utils/notification_utils.dart';
+import 'package:logger/logger.dart';
 
 class DoseScreen extends ConsumerStatefulWidget {
   const DoseScreen({super.key});
@@ -24,6 +25,7 @@ class _DoseScreenState extends ConsumerState<DoseScreen> {
   int? _cycleOffWeeks;
   bool _isCycling = false;
   final List<TitrationStep> _titrationSteps = [];
+  final _logger = Logger();
 
   void _addTime() async {
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
@@ -65,30 +67,56 @@ class _DoseScreenState extends ConsumerState<DoseScreen> {
   }
 
   Future<void> _saveDose() async {
+    _logger.d('Attempting to save dose schedule');
     if (_formKey.currentState!.validate()) {
-      final schedule = DoseSchedule(
-        medId: 0,  // Replace with actual medId
-        doseAmount: double.parse(_doseAmountController.text),
-        unit: _unitController.text,
-        frequency: _frequency,
-        times: _times,
-        startDate: _startDate,
-        endDate: _endDate,
-        isActive: _isActive,
-        cycleWeeks: _cycleWeeks,
-        cycleOffWeeks: _cycleOffWeeks,
-        isCycling: _isCycling,
-        titrationSteps: _titrationSteps,
-      );
-      await ref.read(addDoseScheduleProvider(schedule).future);
-      // Schedule notification (example for first time)
-      if (_times.isNotEmpty) {
-        final notificationTime = DateTime(_startDate.year, _startDate.month, _startDate.day, _times[0].hour, _times[0].minute);
-        await NotificationUtils.scheduleNotification(1, 'Dose Reminder', 'Time for your dose!', notificationTime);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Dose Schedule saved!')));
-        Navigator.pop(context);
+      try {
+        final schedule = DoseSchedule(
+          medId: 0, // Replace with actual medId from dropdown or context
+          doseAmount: double.parse(_doseAmountController.text),
+          unit: _unitController.text,
+          frequency: _frequency,
+          times: _times,
+          startDate: _startDate,
+          endDate: _endDate,
+          isActive: _isActive,
+          cycleWeeks: _cycleWeeks,
+          cycleOffWeeks: _cycleOffWeeks,
+          isCycling: _isCycling,
+          titrationSteps: _titrationSteps,
+        );
+        final key = await ref.read(addDoseScheduleProvider(schedule).future);
+        _logger.d('Dose schedule saved with key: $key');
+        // Schedule notifications for each time
+        for (var i = 0; i < _times.length; i++) {
+          final time = _times[i];
+          final notificationTime = DateTime(
+            _startDate.year,
+            _startDate.month,
+            _startDate.day,
+            time.hour,
+            time.minute,
+          );
+          await NotificationUtils.scheduleNotification(
+            key.hashCode + i,
+            'Dose Reminder',
+            'Time to take ${_doseAmountController.text} ${_unitController.text} of your medication!',
+            notificationTime,
+          );
+          _logger.d('Scheduled notification for time: $notificationTime');
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Dose Schedule saved successfully!')),
+            duration: const Duration(seconds: 2), // Ensure visible
+          );
+          await Future.delayed(const Duration(seconds: 2)); // Delay pop to show SnackBar
+          if (mounted) Navigator.pop(context);
+        }
+      } catch (e) {
+        _logger.e('Failed to save dose schedule: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        }
       }
     }
   }
@@ -121,7 +149,13 @@ class _DoseScreenState extends ConsumerState<DoseScreen> {
                 onChanged: (value) => setState(() => _frequency = value!),
               ),
               ElevatedButton(onPressed: _addTime, child: const Text('Add Time')),
+              Wrap(
+                children: _times.map((time) => Chip(label: Text(time.format(context)))).toList(),
+              ),
               ElevatedButton(onPressed: _addTitrationStep, child: const Text('Add Titration Step')),
+              Wrap(
+                children: _titrationSteps.map((step) => Chip(label: Text('Period: ${step.period}, Dose: ${step.doseAmount}'))).toList(),
+              ),
               ElevatedButton(onPressed: _saveDose, child: const Text('Save')),
             ],
           ),

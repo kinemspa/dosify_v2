@@ -36,7 +36,16 @@ class _NavScreenState extends State<NavScreen> {
   Widget build(BuildContext context) {
     _logger.d('Building NavScreen with selectedIndex: $_selectedIndex');
     return Scaffold(
-      body: _widgetOptions.elementAt(_selectedIndex), // Simplified to ensure rebuild
+      body: Builder(
+        builder: (context) {
+          try {
+            return _widgetOptions.elementAt(_selectedIndex);
+          } catch (e) {
+            _logger.e('Error rendering screen at index $_selectedIndex: $e');
+            return const Center(child: Text('Error loading screen'));
+          }
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
