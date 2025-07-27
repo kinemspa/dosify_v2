@@ -8,6 +8,7 @@ import 'package:dosify_v2/core/data/models/reconstitution.dart';
 import 'package:dosify_v2/core/utils/reconstitution_utils.dart';
 import 'package:dosify_v2/core/data/repositories/medication_repository.dart';
 import 'package:dosify_v2/core/data/repositories/reconstitution_repository.dart';
+import 'package:logger/logger.dart'; // Add for debugging
 
 class MedicationScreen extends ConsumerStatefulWidget {
   final Medication? med;
@@ -30,10 +31,12 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   final _powderAmountController = TextEditingController();
   final _solventVolumeController = TextEditingController();
   final _desiredConcentrationController = TextEditingController();
+  final _logger = Logger(); // Debug logger
 
   @override
   void initState() {
     super.initState();
+    _logger.d('Initializing MedicationScreen, med: ${widget.med}');
     if (widget.med != null) {
       _nameController.text = widget.med!.name;
       _type = widget.med!.type;
@@ -53,6 +56,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   }
 
   Future<void> _saveMedication() async {
+    _logger.d('Attempting to save medication');
     if (_formKey.currentState!.validate()) {
       try {
         final med = Medication(
@@ -66,7 +70,9 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
         );
 
         if (widget.med == null) {
+          _logger.d('Adding new medication');
           final key = await ref.read(addMedicationProvider(med).future);
+          _logger.d('Medication added with key: $key');
           if (_reconstitution) {
             final recon = Reconstitution(
               powderAmount: double.parse(_powderAmountController.text),
@@ -80,8 +86,10 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
               medId: key,
             );
             await ref.read(addReconstitutionProvider(recon).future);
+            _logger.d('Reconstitution added for medId: $key');
           }
         } else {
+          _logger.d('Updating medication with id: ${widget.med!.id}');
           med.id = widget.med!.id;
           final medRepo = ref.read(medicationRepositoryProvider);
           await medRepo.updateMedication(widget.med!.id!, med);
@@ -96,20 +104,25 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 medId: widget.med!.id,
               );
               await reconRepo.addReconstitution(recon);
+              _logger.d('New reconstitution added for medId: ${widget.med!.id}');
             } else {
               recon.powderAmount = double.parse(_powderAmountController.text);
               recon.solventVolume = double.parse(_solventVolumeController.text);
               recon.desiredConcentration = double.tryParse(_desiredConcentrationController.text) ?? recon.desiredConcentration;
+              recon.calculatedVolumePerDose = calculateVolumePerDose(
+                recon.powderAmount,
+                recon.solventVolume,
+                recon.desiredConcentration ?? 0,
+              );
+              await reconRepo.updateReconstitution(recon.key as int, recon);
+              _logger.d('Reconstitution updated for medId: ${widget.med!.id}');
             }
-            recon.calculatedVolumePerDose = calculateVolumePerDose(
-              recon.powderAmount,
-              recon.solventVolume,
-              recon.desiredConcentration ?? 0,
-            );
-            await reconRepo.updateReconstitution(recon.key as int, recon);
           } else if (widget.med!.reconstitution == true) {
             final recon = reconRepo.getByMedId(widget.med!.id!);
-            if (recon != null) await reconRepo.deleteReconstitution(recon.key as int);
+            if (recon != null) {
+              await reconRepo.deleteReconstitution(recon.key as int);
+              _logger.d('Reconstitution deleted for medId: ${widget.med!.id}');
+            }
           }
           ref.invalidate(medicationsProvider);
         }
@@ -118,6 +131,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           Navigator.pop(context);
         }
       } catch (e) {
+        _logger.e('Save failed: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
         }

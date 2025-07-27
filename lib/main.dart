@@ -1,10 +1,10 @@
 import 'package:dosify_v2/features/auth/ui/auth_screen.dart';
-import 'package:dosify_v2/features/nav/ui/nav_screen.dart'; // Changed to NavScreen
+import 'package:dosify_v2/features/nav/ui/nav_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // Add for ProviderScope
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'firebase_options.dart';
 import 'core/data/models/dose_log.dart';
 import 'core/data/models/dose_schedule.dart';
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ProviderScope( // Added ProviderScope
+    return ProviderScope(
       child: MaterialApp(
         title: 'Dosify.v2',
         theme: ThemeData(primarySwatch: Colors.blue),
@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasData) {
-              return const NavScreen(); // Changed to NavScreen
+              return const NavScreen(); // Use NavScreen explicitly
             }
             return const AuthScreen();
           },

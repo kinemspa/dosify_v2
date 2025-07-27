@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:dosify_v2/features/home/ui/home_screen.dart';
-import 'package:dosify_v2/features/medication/ui/medication_screen.dart';
+import 'package:dosify_v2/features/medication/ui/medication_list_screen.dart';
 import 'package:dosify_v2/features/scheduling/ui/dose_screen.dart';
 import 'package:dosify_v2/features/logs/ui/log_screen.dart';
-import 'package:dosify_v2/features/scheduling/ui/calendar_screen.dart'; // Added
+import 'package:dosify_v2/features/scheduling/ui/calendar_screen.dart';
 
 class NavScreen extends StatefulWidget {
   const NavScreen({super.key});
@@ -17,10 +17,10 @@ class _NavScreenState extends State<NavScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
-    MedicationScreen(), // No params for list view; pass med for edit via push
+    MedicationListScreen(),
     DoseScreen(),
     LogScreen(),
-    CalendarScreen(), // Added for calendar view
+    CalendarScreen(),
   ];
 
   void _onItemTapped(int index) {
