@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "738605889095-kov952mjntas69ufrp11s129o82rer6p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kinemspa.dosify_v2",
+            "certificate_hash": "a3630aaa4a38b3a57ef21cc767051ed50f87f1e0"
+          }
+        },
+        {
           "client_id": "738605889095-kgvpad8d7q61blntd463rec7gc3tpcja.apps.googleusercontent.com",
           "client_type": 3
         }
