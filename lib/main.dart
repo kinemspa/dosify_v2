@@ -1,4 +1,6 @@
 import 'package:dosify_v2/features/auth/ui/auth_screen.dart';
+import 'package:dosify_v2/features/home/ui/home_screen.dart'; // Update to nav_screen if separate
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,7 +11,7 @@ import 'core/data/models/medication.dart';
 import 'core/data/models/reconstitution.dart';
 import 'core/data/models/supply.dart';
 import 'core/data/models/time_of_day_adapter.dart';
-import 'core/utils/notification_utils.dart'; // New import
+import 'core/utils/notification_utils.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 
 void main() async {
@@ -25,7 +27,8 @@ void main() async {
   if (!Hive.isAdapterRegistered(3)) Hive.registerAdapter(SupplyAdapter());
   if (!Hive.isAdapterRegistered(4)) Hive.registerAdapter(ReconstitutionAdapter());
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await NotificationUtils.init(); // New: Init notifications
+  tz_data.initializeTimeZones();
+  await NotificationUtils.init();
 
   runApp(const MyApp());
 }
@@ -38,7 +41,18 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Dosify.v2',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const AuthScreen(),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasData) {
+            return const HomeScreen(); // Or NavScreen
+          }
+          return const AuthScreen();
+        },
+      ),
     );
   }
 }

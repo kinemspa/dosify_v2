@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dosify_v2/core/providers/medication_provider.dart';
@@ -53,67 +54,73 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
 
   Future<void> _saveMedication() async {
     if (_formKey.currentState!.validate()) {
-      final med = Medication(
-        name: _nameController.text,
-        type: _type,
-        strength: double.parse(_strengthController.text),
-        unit: _unitController.text,
-        stock: int.parse(_stockController.text),
-        lowStockThreshold: int.parse(_thresholdController.text),
-        reconstitution: _reconstitution,
-      );
+      try {
+        final med = Medication(
+          name: _nameController.text,
+          type: _type,
+          strength: double.parse(_strengthController.text),
+          unit: _unitController.text,
+          stock: int.parse(_stockController.text),
+          lowStockThreshold: int.parse(_thresholdController.text),
+          reconstitution: _reconstitution,
+        );
 
-      if (widget.med == null) {
-        final key = await ref.read(addMedicationProvider(med).future);
-        if (_reconstitution) {
-          final recon = Reconstitution(
-            powderAmount: double.parse(_powderAmountController.text),
-            solventVolume: double.parse(_solventVolumeController.text),
-            desiredConcentration: double.tryParse(_desiredConcentrationController.text) ?? 0,
-            calculatedVolumePerDose: calculateVolumePerDose(
-              double.parse(_powderAmountController.text),
-              double.parse(_solventVolumeController.text),
-              double.tryParse(_desiredConcentrationController.text) ?? 0,
-            ),
-            medId: key,
-          );
-          await ref.read(addReconstitutionProvider(recon).future);
-        }
-      } else {
-        med.id = widget.med!.id;
-        final medRepo = ref.read(medicationRepositoryProvider);
-        await medRepo.updateMedication(widget.med!.id!, med);
-        final reconRepo = ref.read(reconstitutionRepositoryProvider);
-        if (_reconstitution) {
-          Reconstitution? recon = reconRepo.getByMedId(widget.med!.id!);
-          if (recon == null) {
-            recon = Reconstitution(
-              powderAmount: double.parse(_powderAmountController.text.isEmpty ? '0' : _powderAmountController.text),
-              solventVolume: double.parse(_solventVolumeController.text.isEmpty ? '0' : _solventVolumeController.text),
+        if (widget.med == null) {
+          final key = await ref.read(addMedicationProvider(med).future);
+          if (_reconstitution) {
+            final recon = Reconstitution(
+              powderAmount: double.parse(_powderAmountController.text),
+              solventVolume: double.parse(_solventVolumeController.text),
               desiredConcentration: double.tryParse(_desiredConcentrationController.text) ?? 0,
-              medId: widget.med!.id,
+              calculatedVolumePerDose: calculateVolumePerDose(
+                double.parse(_powderAmountController.text),
+                double.parse(_solventVolumeController.text),
+                double.tryParse(_desiredConcentrationController.text) ?? 0,
+              ),
+              medId: key,
             );
-            await reconRepo.addReconstitution(recon);
-          } else {
-            recon.powderAmount = double.parse(_powderAmountController.text);
-            recon.solventVolume = double.parse(_solventVolumeController.text);
-            recon.desiredConcentration = double.tryParse(_desiredConcentrationController.text) ?? recon.desiredConcentration;
+            await ref.read(addReconstitutionProvider(recon).future);
           }
-          recon.calculatedVolumePerDose = calculateVolumePerDose(
-            recon.powderAmount,
-            recon.solventVolume,
-            recon.desiredConcentration ?? 0,
-          );
-          await reconRepo.updateReconstitution(recon.key as int, recon);
-        } else if (widget.med!.reconstitution == true) {
-          final recon = reconRepo.getByMedId(widget.med!.id!);
-          if (recon != null) await reconRepo.deleteReconstitution(recon.key as int);
+        } else {
+          med.id = widget.med!.id;
+          final medRepo = ref.read(medicationRepositoryProvider);
+          await medRepo.updateMedication(widget.med!.id!, med);
+          final reconRepo = ref.read(reconstitutionRepositoryProvider);
+          if (_reconstitution) {
+            Reconstitution? recon = reconRepo.getByMedId(widget.med!.id!);
+            if (recon == null) {
+              recon = Reconstitution(
+                powderAmount: double.parse(_powderAmountController.text.isEmpty ? '0' : _powderAmountController.text),
+                solventVolume: double.parse(_solventVolumeController.text.isEmpty ? '0' : _solventVolumeController.text),
+                desiredConcentration: double.tryParse(_desiredConcentrationController.text) ?? 0,
+                medId: widget.med!.id,
+              );
+              await reconRepo.addReconstitution(recon);
+            } else {
+              recon.powderAmount = double.parse(_powderAmountController.text);
+              recon.solventVolume = double.parse(_solventVolumeController.text);
+              recon.desiredConcentration = double.tryParse(_desiredConcentrationController.text) ?? recon.desiredConcentration;
+            }
+            recon.calculatedVolumePerDose = calculateVolumePerDose(
+              recon.powderAmount,
+              recon.solventVolume,
+              recon.desiredConcentration ?? 0,
+            );
+            await reconRepo.updateReconstitution(recon.key as int, recon);
+          } else if (widget.med!.reconstitution == true) {
+            final recon = reconRepo.getByMedId(widget.med!.id!);
+            if (recon != null) await reconRepo.deleteReconstitution(recon.key as int);
+          }
+          ref.invalidate(medicationsProvider);
         }
-        ref.invalidate(medicationsProvider);
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
-        Navigator.pop(context);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Save failed: $e')));
+        }
       }
     }
   }
@@ -155,7 +162,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 controller: _strengthController,
                 decoration: const InputDecoration(labelText: 'Strength'),
                 keyboardType: TextInputType.number,
-                validator: _numberValidator, // Updated
+                validator: _numberValidator,
               ),
               TextFormField(
                 controller: _unitController,
@@ -166,13 +173,13 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 controller: _stockController,
                 decoration: const InputDecoration(labelText: 'Stock'),
                 keyboardType: TextInputType.number,
-                validator: _intValidator, // Updated
+                validator: _intValidator,
               ),
               TextFormField(
                 controller: _thresholdController,
                 decoration: const InputDecoration(labelText: 'Low Stock Threshold'),
                 keyboardType: TextInputType.number,
-                validator: _intValidator, // Updated
+                validator: _intValidator,
               ),
               SwitchListTile(
                 title: const Text('Reconstitution'),
@@ -184,19 +191,19 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                   controller: _powderAmountController,
                   decoration: const InputDecoration(labelText: 'Powder Amount'),
                   keyboardType: TextInputType.number,
-                  validator: _numberValidator, // Updated
+                  validator: _numberValidator,
                 ),
                 TextFormField(
                   controller: _solventVolumeController,
                   decoration: const InputDecoration(labelText: 'Solvent Volume'),
                   keyboardType: TextInputType.number,
-                  validator: _numberValidator, // Updated
+                  validator: _numberValidator,
                 ),
                 TextFormField(
                   controller: _desiredConcentrationController,
                   decoration: const InputDecoration(labelText: 'Desired Concentration'),
                   keyboardType: TextInputType.number,
-                  validator: _numberValidator, // Updated
+                  validator: _numberValidator,
                 ),
               ],
               ElevatedButton(
