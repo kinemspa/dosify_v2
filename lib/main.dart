@@ -1,4 +1,5 @@
 import 'package:dosify_v2/features/auth/ui/auth_screen.dart';
+import 'package:dosify_v2/features/home/ui/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -10,6 +11,9 @@ import 'core/data/models/reconstitution.dart';
 import 'core/data/models/supply.dart';
 import 'core/data/repositories/medication_repository.dart';
 import 'core/data/models/time_of_day_adapter.dart';
+import 'core/data/repositories/supply_repository.dart';
+import 'core/data/repositories/reconstitution_repository.dart';
+import 'core/utils/reconstitution_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,15 +31,40 @@ void main() async {
   // Test code here if wanted
   final repo = MedicationRepository();
   await repo.init();
-  await repo.addMedication(Medication(
+  final supplyRepo = SupplyRepository();
+  await supplyRepo.init();
+  final reconRepo = ReconstitutionRepository();
+  await reconRepo.init();
+
+  final medKey = await repo.addMedication(Medication(
     name: 'Test Med',
     type: MedicationType.tablet,
     strength: 10.0,
     unit: 'mg',
     stock: 20,
     lowStockThreshold: 5,
+    reconstitution: true,
   ));
+
+  await reconRepo.addReconstitution(Reconstitution(
+    powderAmount: 100.0,
+    solventVolume: 10.0,
+    desiredConcentration: 10.0,
+    calculatedVolumePerDose: calculateVolumePerDose(100.0, 10.0, 10.0),
+    medId: medKey,
+  ));
+
+  await supplyRepo.addSupply(Supply(
+    name: 'Test Supply',
+    unit: 'units',
+    stock: 50,
+    lowStockThreshold: 10,
+    linkedMedId: medKey,
+  ));
+
   print(repo.getMedications());
+  print(supplyRepo.getSupplies());
+  print(reconRepo.getReconstitutions());
 
   runApp(const MyApp());
 }

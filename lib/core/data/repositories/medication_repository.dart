@@ -8,8 +8,8 @@ class MedicationRepository {
     _box = await Hive.openBox<Medication>('medications');
   }
 
-  Future<void> addMedication(Medication med) async {
-    await _box.add(med);
+  Future<int> addMedication(Medication med) async {
+    return await _box.add(med);
   }
 
   List<Medication> getMedications() {

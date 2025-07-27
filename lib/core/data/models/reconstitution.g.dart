@@ -21,13 +21,14 @@ class ReconstitutionAdapter extends TypeAdapter<Reconstitution> {
       solventVolume: fields[1] as double,
       desiredConcentration: fields[2] as double?,
       calculatedVolumePerDose: fields[3] as double?,
+      medId: fields[4] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Reconstitution obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(5)
       ..writeByte(0)
       ..write(obj.powderAmount)
       ..writeByte(1)
@@ -35,7 +36,9 @@ class ReconstitutionAdapter extends TypeAdapter<Reconstitution> {
       ..writeByte(2)
       ..write(obj.desiredConcentration)
       ..writeByte(3)
-      ..write(obj.calculatedVolumePerDose);
+      ..write(obj.calculatedVolumePerDose)
+      ..writeByte(4)
+      ..write(obj.medId);
   }
 
   @override

@@ -16,10 +16,14 @@ class Reconstitution {
   @HiveField(3)
   double? calculatedVolumePerDose;
 
+  @HiveField(4)
+  int? medId;
+
   Reconstitution({
     required this.powderAmount,
     required this.solventVolume,
     this.desiredConcentration,
     this.calculatedVolumePerDose,
+    this.medId,
   });
 }
