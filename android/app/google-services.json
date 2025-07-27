@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "738605889095",
+    "project_id": "dosify-v2",
+    "storage_bucket": "dosify-v2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:738605889095:android:72875be6583e20c8892362",
+        "android_client_info": {
+          "package_name": "com.kinemspa.dosify_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "738605889095-kgvpad8d7q61blntd463rec7gc3tpcja.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1UPWeJqykbPNYc1xZBZ-QhjvqRfnok1w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "738605889095-kgvpad8d7q61blntd463rec7gc3tpcja.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "738605889095-3ass2sleq3pddqsnp1s1gap6gl27q7ls.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kinemspa.dosifyV2"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
