@@ -16,5 +16,5 @@ final suppliesProvider = FutureProvider<List<Supply>>((ref) async {
 final addSupplyProvider = FutureProvider.autoDispose.family<void, Supply>((ref, supply) async {
   final repo = ref.watch(supplyRepositoryProvider);
   await repo.addSupply(supply);
-  ref.refresh(suppliesProvider);
+  ref.invalidate(suppliesProvider);
 });

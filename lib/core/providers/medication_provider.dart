@@ -16,6 +16,6 @@ final medicationsProvider = FutureProvider<List<Medication>>((ref) async {
 final addMedicationProvider = FutureProvider.autoDispose.family<int, Medication>((ref, med) async {
   final repo = ref.watch(medicationRepositoryProvider);
   final key = await repo.addMedication(med);
-  ref.refresh(medicationsProvider);
+  ref.invalidate(medicationsProvider);
   return key;
 });

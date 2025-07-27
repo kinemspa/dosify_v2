@@ -16,5 +16,5 @@ final reconstitutionsProvider = FutureProvider<List<Reconstitution>>((ref) async
 final addReconstitutionProvider = FutureProvider.autoDispose.family<void, Reconstitution>((ref, recon) async {
   final repo = ref.watch(reconstitutionRepositoryProvider);
   await repo.addReconstitution(recon);
-  ref.refresh(reconstitutionsProvider);
+  ref.invalidate(reconstitutionsProvider);
 });

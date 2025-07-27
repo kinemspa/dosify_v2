@@ -16,5 +16,5 @@ final doseSchedulesProvider = FutureProvider<List<DoseSchedule>>((ref) async {
 final addDoseScheduleProvider = FutureProvider.autoDispose.family<void, DoseSchedule>((ref, schedule) async {
   final repo = ref.watch(doseScheduleRepositoryProvider);
   await repo.addDoseSchedule(schedule);
-  ref.refresh(doseSchedulesProvider);
+  ref.invalidate(doseSchedulesProvider);
 });

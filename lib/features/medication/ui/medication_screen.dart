@@ -9,7 +9,7 @@ import 'package:dosify_v2/core/data/repositories/medication_repository.dart';
 import 'package:dosify_v2/core/data/repositories/reconstitution_repository.dart';
 
 class MedicationScreen extends ConsumerStatefulWidget {
-  final Medication? med;  // Optional for edit
+  final Medication? med;
 
   const MedicationScreen({super.key, this.med});
 
@@ -69,15 +69,15 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
           final recon = Reconstitution(
             powderAmount: double.parse(_powderAmountController.text),
             solventVolume: double.parse(_solventVolumeController.text),
-            desiredConcentration: double.parse(_desiredConcentrationController.text),
+            desiredConcentration: double.tryParse(_desiredConcentrationController.text) ?? 0,
             calculatedVolumePerDose: calculateVolumePerDose(
               double.parse(_powderAmountController.text),
               double.parse(_solventVolumeController.text),
-              double.parse(_desiredConcentrationController.text),
+              double.tryParse(_desiredConcentrationController.text) ?? 0,
             ),
             medId: key,
           );
-          ref.read(addReconstitutionProvider(recon));
+          await ref.read(addReconstitutionProvider(recon).future);
         }
       } else {
         med.id = widget.med!.id;
@@ -87,28 +87,47 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
         if (_reconstitution) {
           Reconstitution? recon = reconRepo.getByMedId(widget.med!.id!);
           if (recon == null) {
-            recon = Reconstitution(powderAmount: 0, solventVolume: 0, medId: widget.med!.id);
-            final reconKey = await reconRepo.addReconstitution(recon);
-            recon = reconRepo._box.get(reconKey);
+            recon = Reconstitution(
+              powderAmount: double.parse(_powderAmountController.text.isEmpty ? '0' : _powderAmountController.text),
+              solventVolume: double.parse(_solventVolumeController.text.isEmpty ? '0' : _solventVolumeController.text),
+              desiredConcentration: double.tryParse(_desiredConcentrationController.text) ?? 0,
+              medId: widget.med!.id,
+            );
+            await reconRepo.addReconstitution(recon);
+          } else {
+            recon.powderAmount = double.parse(_powderAmountController.text);
+            recon.solventVolume = double.parse(_solventVolumeController.text);
+            recon.desiredConcentration = double.tryParse(_desiredConcentrationController.text) ?? recon.desiredConcentration;
           }
-          recon!.powderAmount = double.parse(_powderAmountController.text);
-          recon.solventVolume = double.parse(_solventVolumeController.text);
-          recon.desiredConcentration = double.parse(_desiredConcentrationController.text);
           recon.calculatedVolumePerDose = calculateVolumePerDose(
             recon.powderAmount,
             recon.solventVolume,
-            recon.desiredConcentration!,
+            recon.desiredConcentration ?? 0,
           );
           await reconRepo.updateReconstitution(recon.key as int, recon);
         } else if (widget.med!.reconstitution == true) {
           final recon = reconRepo.getByMedId(widget.med!.id!);
           if (recon != null) await reconRepo.deleteReconstitution(recon.key as int);
         }
-        ref.refresh(medicationsProvider);
+        ref.invalidate(medicationsProvider);
       }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
+        Navigator.pop(context);
+      }
     }
+  }
+
+  String? _numberValidator(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    if (double.tryParse(value) == null) return 'Invalid number';
+    return null;
+  }
+
+  String? _intValidator(String? value) {
+    if (value == null || value.isEmpty) return 'Required';
+    if (int.tryParse(value) == null) return 'Invalid integer';
+    return null;
   }
 
   @override
@@ -136,7 +155,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 controller: _strengthController,
                 decoration: const InputDecoration(labelText: 'Strength'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? 'Required' : null,
+                validator: _numberValidator, // Updated
               ),
               TextFormField(
                 controller: _unitController,
@@ -147,13 +166,13 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                 controller: _stockController,
                 decoration: const InputDecoration(labelText: 'Stock'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? 'Required' : null,
+                validator: _intValidator, // Updated
               ),
               TextFormField(
                 controller: _thresholdController,
                 decoration: const InputDecoration(labelText: 'Low Stock Threshold'),
                 keyboardType: TextInputType.number,
-                validator: (value) => value!.isEmpty ? 'Required' : null,
+                validator: _intValidator, // Updated
               ),
               SwitchListTile(
                 title: const Text('Reconstitution'),
@@ -165,19 +184,19 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
                   controller: _powderAmountController,
                   decoration: const InputDecoration(labelText: 'Powder Amount'),
                   keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
+                  validator: _numberValidator, // Updated
                 ),
                 TextFormField(
                   controller: _solventVolumeController,
                   decoration: const InputDecoration(labelText: 'Solvent Volume'),
                   keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
+                  validator: _numberValidator, // Updated
                 ),
                 TextFormField(
                   controller: _desiredConcentrationController,
                   decoration: const InputDecoration(labelText: 'Desired Concentration'),
                   keyboardType: TextInputType.number,
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
+                  validator: _numberValidator, // Updated
                 ),
               ],
               ElevatedButton(

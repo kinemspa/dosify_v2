@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dosify_v2/core/providers/supply_provider.dart';
 import 'package:dosify_v2/core/providers/medication_provider.dart';
 import 'package:dosify_v2/core/data/models/supply.dart';
-import 'package:dosify_v2/core/data/models/medication.dart';
 
 class SupplyScreen extends ConsumerStatefulWidget {
   final Supply? supply;  // Optional for edit
@@ -36,23 +35,28 @@ class _SupplyScreenState extends ConsumerState<SupplyScreen> {
 
   Future<void> _saveSupply() async {
     if (_formKey.currentState!.validate()) {
-      final supply = Supply(
-        id: widget.supply?.id,
-        name: _nameController.text,
-        unit: _unitController.text,
-        stock: int.parse(_stockController.text),
-        lowStockThreshold: int.parse(_thresholdController.text),
-        linkedMedId: _linkedMedId,
-      );
-
       if (widget.supply == null) {
-        ref.read(addSupplyProvider(supply));
+        final supply = Supply(
+          name: _nameController.text,
+          unit: _unitController.text,
+          stock: int.parse(_stockController.text),
+          lowStockThreshold: int.parse(_thresholdController.text),
+          linkedMedId: _linkedMedId,
+        );
+        await ref.read(addSupplyProvider(supply).future);
       } else {
-        await widget.supply!.save();  // Hive update
-        ref.refresh(suppliesProvider);
+        widget.supply!.name = _nameController.text;
+        widget.supply!.unit = _unitController.text;
+        widget.supply!.stock = int.parse(_stockController.text);
+        widget.supply!.lowStockThreshold = int.parse(_thresholdController.text);
+        widget.supply!.linkedMedId = _linkedMedId;
+        await widget.supply!.save();
+        ref.invalidate(suppliesProvider);
       }
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Supply saved!')));
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Supply saved!')));
+        Navigator.pop(context);
+      }
     }
   }
 

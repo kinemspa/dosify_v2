@@ -5,11 +5,23 @@ class ReconstitutionRepository {
   late Box<Reconstitution> _box;
 
   Future<void> init() async {
-    _box = await Hive.openBox<Reconstitution>('reconstitutions');
+    if (!Hive.isBoxOpen('reconstitutions')) {
+      _box = await Hive.openBox<Reconstitution>('reconstitutions');
+    } else {
+      _box = Hive.box<Reconstitution>('reconstitutions');
+    }
   }
 
   Future<int> addReconstitution(Reconstitution recon) async {
     return await _box.add(recon);
+  }
+
+  Reconstitution? getByMedId(int medId) {
+    try {
+      return _box.values.firstWhere((recon) => recon.medId == medId);
+    } on StateError {
+      return null;
+    }
   }
 
   Future<void> updateReconstitution(int key, Reconstitution recon) async {
@@ -24,7 +36,7 @@ class ReconstitutionRepository {
     return _box.values.toList();
   }
 
-  Reconstitution? getByMedId(int medId) {
-    return _box.values.firstWhere((recon) => recon.medId == medId, orElse: () => null);
+  Reconstitution? getReconstitution(int key) {
+    return _box.get(key);
   }
 }

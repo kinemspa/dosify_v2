@@ -3,7 +3,7 @@ import 'package:hive/hive.dart';
 part 'reconstitution.g.dart';
 
 @HiveType(typeId: 4)
-class Reconstitution {
+class Reconstitution extends HiveObject {
   @HiveField(0)
   double powderAmount;
 
