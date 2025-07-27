@@ -84,10 +84,11 @@ class LogSearchDelegate extends SearchDelegate {
     final logsAsync = ref.watch(doseLogsProvider);
     return logsAsync.when(
       data: (logs) {
-        final filtered = logs.where((log) =>
-        log.notes?.toLowerCase().contains(query.toLowerCase()) ?? false ||
-            log.reaction?.toLowerCase().contains(query.toLowerCase()) ?? false,
-        ).toList();
+        final filtered = logs.where((log) {
+          final notesMatch = log.notes != null && log.notes!.toLowerCase().contains(query.toLowerCase());
+          final reactionMatch = log.reaction != null && log.reaction!.toLowerCase().contains(query.toLowerCase());
+          return notesMatch || reactionMatch;
+        }).toList();
         return ListView.builder(
           itemCount: filtered.length,
           itemBuilder: (context, index) {
@@ -106,6 +107,6 @@ class LogSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildSuggestions(BuildContext context) {
-    return const SizedBox.shrink(); // Suggestions can be added later for efficiency
+    return const SizedBox.shrink();
   }
 }

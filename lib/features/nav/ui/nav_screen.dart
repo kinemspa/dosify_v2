@@ -3,7 +3,7 @@ import 'package:dosify_v2/features/home/ui/home_screen.dart';
 import 'package:dosify_v2/features/medication/ui/medication_screen.dart';
 import 'package:dosify_v2/features/scheduling/ui/dose_screen.dart';
 import 'package:dosify_v2/features/logs/ui/log_screen.dart';
-// Add SettingsScreen if exists
+import 'package:dosify_v2/features/scheduling/ui/calendar_screen.dart'; // Added
 
 class NavScreen extends StatefulWidget {
   const NavScreen({super.key});
@@ -17,10 +17,10 @@ class _NavScreenState extends State<NavScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     HomeScreen(),
-    MedicationScreen(),
+    MedicationScreen(), // No params for list view; pass med for edit via push
     DoseScreen(),
     LogScreen(),
-    // SettingsScreen(),
+    CalendarScreen(), // Added for calendar view
   ];
 
   void _onItemTapped(int index) {
@@ -53,7 +53,10 @@ class _NavScreenState extends State<NavScreen> {
             icon: Icon(Icons.history),
             label: 'Logs',
           ),
-          // BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Calendar',
+          ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,

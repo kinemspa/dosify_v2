@@ -1,9 +1,10 @@
 import 'package:dosify_v2/features/auth/ui/auth_screen.dart';
-import 'package:dosify_v2/features/home/ui/home_screen.dart'; // Update to nav_screen if separate
+import 'package:dosify_v2/features/nav/ui/nav_screen.dart'; // Changed to NavScreen
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Add for ProviderScope
 import 'firebase_options.dart';
 import 'core/data/models/dose_log.dart';
 import 'core/data/models/dose_schedule.dart';
@@ -38,20 +39,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Dosify.v2',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            return const HomeScreen(); // Or NavScreen
-          }
-          return const AuthScreen();
-        },
+    return ProviderScope( // Added ProviderScope
+      child: MaterialApp(
+        title: 'Dosify.v2',
+        theme: ThemeData(primarySwatch: Colors.blue),
+        home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasData) {
+              return const NavScreen(); // Changed to NavScreen
+            }
+            return const AuthScreen();
+          },
+        ),
       ),
     );
   }
