@@ -42,7 +42,14 @@ class MyApp extends StatelessWidget {
     return ProviderScope(
       child: MaterialApp(
         title: 'Dosify.v2',
-        theme: ThemeData(primarySwatch: Colors.blue),
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+            backgroundColor: Colors.blue, // Dark background for contrast
+            selectedItemColor: Colors.white, // White for selected items
+            unselectedItemColor: Colors.white70, // Light gray for unselected
+          ),
+        ),
         home: StreamBuilder<User?>(
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
@@ -50,7 +57,7 @@ class MyApp extends StatelessWidget {
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasData) {
-              return const NavScreen(); // Use NavScreen explicitly
+              return const NavScreen();
             }
             return const AuthScreen();
           },

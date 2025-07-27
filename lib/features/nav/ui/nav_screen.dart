@@ -59,8 +59,10 @@ class _NavScreenState extends State<NavScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        onTap: _onItemTapped,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white70,
+        backgroundColor: Colors.blue, // Ensure visibility
+        type: BottomNavigationBarType.fixed, // Prevent shifting
       ),
     );
   }

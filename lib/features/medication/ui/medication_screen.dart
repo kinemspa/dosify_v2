@@ -37,7 +37,8 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
   void initState() {
     super.initState();
     _logger.d('Initializing MedicationScreen, med: ${widget.med}');
-    if (widget.med != null && widget.med!.id != null) {
+    if (widget.med != null) {
+      _logger.d('Populating form for med: ${widget.med!.name}, id: ${widget.med!.id}');
       _nameController.text = widget.med!.name;
       _type = widget.med!.type;
       _strengthController.text = widget.med!.strength.toString();
@@ -45,12 +46,16 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
       _stockController.text = widget.med!.stock.toString();
       _thresholdController.text = widget.med!.lowStockThreshold.toString();
       _reconstitution = widget.med!.reconstitution ?? false;
-      final reconRepo = ref.read(reconstitutionRepositoryProvider);
-      final recon = reconRepo.getByMedId(widget.med!.id!);
-      if (recon != null) {
-        _powderAmountController.text = recon.powderAmount.toString();
-        _solventVolumeController.text = recon.solventVolume.toString();
-        _desiredConcentrationController.text = recon.desiredConcentration?.toString() ?? '';
+      if (widget.med!.id != null) {
+        final reconRepo = ref.read(reconstitutionRepositoryProvider);
+        final recon = reconRepo.getByMedId(widget.med!.id!);
+        if (recon != null) {
+          _powderAmountController.text = recon.powderAmount.toString();
+          _solventVolumeController.text = recon.solventVolume.toString();
+          _desiredConcentrationController.text = recon.desiredConcentration?.toString() ?? '';
+        }
+      } else {
+        _logger.w('Medication id is null for edit');
       }
     }
   }
@@ -88,7 +93,7 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
             await ref.read(addReconstitutionProvider(recon).future);
             _logger.d('Reconstitution added for medId: $key');
           }
-        } else {
+        } else if (widget.med!.id != null) {
           _logger.d('Updating medication with id: ${widget.med!.id}');
           med.id = widget.med!.id;
           final medRepo = ref.read(medicationRepositoryProvider);
@@ -125,6 +130,12 @@ class _MedicationScreenState extends ConsumerState<MedicationScreen> {
             }
           }
           ref.invalidate(medicationsProvider);
+        } else {
+          _logger.e('Cannot update medication: id is null');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Save failed: Medication ID is missing')));
+            return;
+          }
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Medication saved!')));
